@@ -187,7 +187,7 @@ applyTemplate' tpl context x = go tpl
 
     applyElem (Chunk c) = return c
 
-    applyElem (Expr e) = applyExpr e >>= getString e
+    applyElem (Expr _ e) = applyExpr e >>= getString e
 
     applyElem Escaped = return "$"
 

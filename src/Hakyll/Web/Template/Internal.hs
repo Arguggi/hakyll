@@ -55,11 +55,18 @@ instance IsString TemplateKey where
     fromString = TemplateKey
 
 
+data Trailing
+    = Normal
+    | RemoveLeading
+    | RemoveFollowing
+    | RemoveBoth
+    deriving (Show, Eq, Typeable)
+
 --------------------------------------------------------------------------------
 -- | Elements of a template.
 data TemplateElement
     = Chunk String
-    | Expr TemplateExpr
+    | Expr Trailing TemplateExpr
     | Escaped
     | If TemplateExpr Template (Maybe Template)   -- expr, then, else
     | For TemplateExpr Template (Maybe Template)  -- expr, body, separator
@@ -70,7 +77,7 @@ data TemplateElement
 --------------------------------------------------------------------------------
 instance Binary TemplateElement where
     put (Chunk string) = putWord8 0 >> put string
-    put (Expr e)       = putWord8 1 >> put e
+    put (Expr _ e)     = putWord8 1 >> put e
     put (Escaped)      = putWord8 2
     put (If e t f  )   = putWord8 3 >> put e >> put t >> put f
     put (For e b s)    = putWord8 4 >> put e >> put b >> put s
@@ -78,7 +85,7 @@ instance Binary TemplateElement where
 
     get = getWord8 >>= \tag -> case tag of
         0 -> Chunk <$> get
-        1 -> Expr <$> get
+        1 -> Expr <$> pure Normal <*> get
         2 -> pure Escaped
         3 -> If <$> get <*> get <*> get
         4 -> For <$> get <*> get <*> get
@@ -140,10 +147,19 @@ chunk = Chunk <$> (P.many1 $ P.noneOf "$")
 expr :: P.Parser TemplateElement
 expr = P.try $ do
     void $ P.char '$'
-    e <- expr'
+    leadingMinus <- P.optionMaybe (P.char '-')
+    (Expr _ e) <- (\x -> Expr Normal x) <$> expr'
+    followingMinus <- P.optionMaybe (P.char '-')
     void $ P.char '$'
-    return $ Expr e
+    let leading = leadingCase leadingMinus followingMinus
+    return $ Expr leading e
 
+
+leadingCase :: Maybe Char -> Maybe Char -> Trailing
+leadingCase Nothing  Nothing = Normal
+leadingCase (Just _) Nothing = RemoveLeading
+leadingCase Nothing (Just _) = RemoveFollowing
+leadingCase (Just _) (Just _) = RemoveBoth
 
 --------------------------------------------------------------------------------
 expr' :: P.Parser TemplateExpr
