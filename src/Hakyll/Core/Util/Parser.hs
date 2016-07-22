@@ -16,9 +16,14 @@ import           Text.Parsec.String  (Parser)
 --------------------------------------------------------------------------------
 metadataKey :: Parser String
 metadataKey = do
-    i <- (:) <$> P.letter <*> (P.many $ P.alphaNum <|> P.oneOf "_.")
+    i <- (:) <$> P.letter <*> (P.many $ P.alphaNum <|> P.oneOf "_." <|> notEndingMinus)
     if i `elem` reservedKeys then mzero else return i
 
+notEndingMinus :: Parser Char
+notEndingMinus = P.try $ do
+    P.char '-'
+    P.notFollowedBy (P.char '$')
+    return '-'
 
 --------------------------------------------------------------------------------
 reservedKeys :: [String]
