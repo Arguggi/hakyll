@@ -4,6 +4,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Hakyll.Web.Template.Internal
     ( Template (..)
+    , Trailing  (..)
     , TemplateKey (..)
     , TemplateExpr (..)
     , TemplateElement (..)

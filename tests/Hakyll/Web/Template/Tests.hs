@@ -32,7 +32,7 @@ tests = testGroup "Hakyll.Core.Template.Tests" $ concat
       ]
 
     , fromAssertions "readTemplate"
-        [ Template [Chunk "Hello ", Expr (Call "guest" [])]
+        [ Template [Chunk "Hello ", Expr Normal (Call "guest" [])]
             @=?  readTemplate "Hello $guest()$"
         , Template
             [If (Call "a" [StringLiteral "bar"])
@@ -85,4 +85,4 @@ testApplyJoinTemplateList = do
   where
     i1  = Item "item1" "Hello"
     i2  = Item "item2" "World"
-    tpl = Template [Chunk "<b>", Expr (Ident "body"), Chunk "</b>"]
+    tpl = Template [Chunk "<b>", Expr Normal (Ident "body"), Chunk "</b>"]
